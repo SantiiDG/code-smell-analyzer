@@ -1,0 +1,2 @@
+# Optional dependency for rich terminal formatting (tables, panels, colors)
+rich>=13.0.0
