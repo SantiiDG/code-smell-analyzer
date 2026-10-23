@@ -1,4 +1,4 @@
-# 🔍 Clean Code Smell Analyzer (CLI)
+# Clean Code Smell Analyzer (CLI)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
