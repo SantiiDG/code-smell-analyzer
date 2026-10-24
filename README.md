@@ -2,123 +2,129 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Code Style: Clean Code](https://img.shields.io/badge/Code%20Style-Clean%20Code-brightgreen.svg)](https://clean-code-developer.com/)
+[![Health Score: A+](https://img.shields.io/badge/Self--Audit%20Score-A%2B%20(100%2F100)-brightgreen.svg)](https://github.com/SantiiDG/code-smell-analyzer)
+[![Code Style: Clean Code](https://img.shields.io/badge/Architecture-Clean%20Code-purple.svg)](https://clean-code-developer.com/)
 
-Un analizador estático de arquitectura y código limpio en Python (**un único archivo autónomo**) diseñado para auditar proyectos y detectar **code smells** y deuda técnica de forma exhaustiva, directa y accionable.
+Un analizador estático de arquitectura y código limpio en Python diseñado para auditar proyectos de software y detectar **code smells**, complejidad ciclomática y deuda técnica de forma exhaustiva, directa y accionable.
+
+> **Dogfooding verificado:** Este propio repositorio pasa su auto-auditoría con **0 Code Smells** y un **Health Score de `A+ (100.0/100)`**.
 
 ---
 
 ## ✨ Características Principales
 
-- **Arquitectura Zero-Setup:** Implementado en un único archivo autónomo (`smell_analyzer.py`).
-- **Análisis de Alta Precisión (AST):** Inspección sintáctica profunda para Python mediante árboles de sintaxis abstracta (`ast`) con filtrado inteligente de falsos positivos.
-- **Soporte Polyglot:** Heurísticas y análisis léxico multilingüe para JavaScript, TypeScript, Java, C#, C++, Go, PHP y Ruby.
-- **Interfaz Visual Rica:** Tablas coloreadas, paneles y barras visuales mediante [`rich`](https://github.com/Textualize/rich) con degradación elegante a ANSI estándar en entornos CI/CD.
-- **Exclusión Inteligente:** Omite automáticamente `.git`, `node_modules`, `venv`, `__pycache__`, minificados (`*.min.js`) y binarios.
-- **Auditoría Accionable:** Cada smell incluye ruta exacta, número de línea, severidad, diagnóstico técnico y **sugerencia de refactorización concreta** (Martin Fowler).
-- **Exportación a Markdown:** Genera informes ejecutivos (`smells_report.md`) con Health Score, Top 3 de prioridades y tablas detalladas.
+- **Análisis Estático AST de Alta Precisión (Python):** Inspección sintáctica mediante árboles de sintaxis abstracta (`ast`). Descuenta automáticamente docstrings al medir longitud de funciones, reconoce escaleras `elif` planas y evita falsos positivos en constantes, Enums y atributos de clase.
+- **Motor Heurístico Polyglot Saneado:** Soporte léxico multilingüe para **JavaScript, TypeScript, Java, C#, C++, Go, PHP y Ruby** con limpieza previa de literales de texto y comentarios en línea para un balanceo exacto de llaves `{}`.
+- **10 Detectores de Deuda Técnica:** Incluye complejidad ciclomática de McCabe, argumentos mutables por defecto, listas largas de parámetros, anidación profunda, God Classes, condiciones booleanas complejas, números mágicos y código muerto comentado.
+- **Interfaz Visual Enriquecida:** Tablas coloreadas, paneles y resúmenes ejecutivos con [`rich`](https://github.com/Textualize/rich) y degradación automática a salida ANSI estándar en entornos sin dependencias o CI/CD.
+- **Exportación Dual (Markdown y JSON):** Genera reportes ejecutivos en Markdown (`.md`) para documentación o en JSON estructurado (`.json`) para pipelines de integración continua.
 
 ---
 
-## 🔎 Code Smells Detectados
+## 🏗️ Estructura del Proyecto
 
-| Smell | Severidad | Descripción y Heurística | Sugerencia de Refactorización |
+El proyecto aplica **Clean Architecture** y el **Principio de Responsabilidad Única (SRP)**:
+
+```text
+code-smell-analyzer/
+├── smell_analyzer.py             # Punto de entrada CLI principal
+├── analyzer/                     # Paquete modular de análisis estático
+│   ├── __init__.py
+│   ├── constants.py              # Constantes, umbrales y pesos centralizados (0 Magic Numbers)
+│   ├── models.py                 # Entidades de dominio, Enums y cálculo de Health Score
+│   ├── discovery.py              # Explorador recursivo y filtro de archivos ignorados
+│   ├── comment_detector.py       # Heurística poliglota de detección de código comentado
+│   ├── python_analyzer.py        # Analizador AST para Python (McCabe, Nesting, SRP, SLAP)
+│   ├── polyglot_analyzer.py      # Analizador léxico para JS, TS, Java, C#, C++, Go, PHP
+│   ├── engine.py                 # Orquestador central de análisis
+│   ├── renderers.py              # Renderizador visual en terminal (Rich UI + Fallback ANSI)
+│   ├── exporters.py              # Exportadores a Markdown (.md) y JSON (.json)
+│   └── cli.py                    # Configuración de argumentos CLI y flujo de ejecución
+├── tests/                        # Suite de pruebas unitarias y test de auto-auditoría
+│   └── test_analyzer.py
+├── requirements.txt              # Dependencia visual opcional (rich)
+├── LICENSE                       # Licencia MIT
+└── README.md                     # Documentación técnica
+```
+
+---
+
+## 🔎 Catálogo de Code Smells Detectados
+
+| Code Smell | Severidad | Heurística / Regla Estática | Refactorización Recomendada |
 | :--- | :---: | :--- | :--- |
-| **Long Method / Function** | `ALTA` / `CRÍTICA` | Métodos con más de $N$ líneas (por defecto: 35). | *Extract Method* / Principio SLAP |
-| **God Class / Large File** | `ALTA` / `CRÍTICA` | Clases con > 200 líneas o > 12 métodos; archivos > 300 líneas. | *Single Responsibility Principle (SRP)* / *Facade* |
-| **Deep Nesting** | `ALTA` / `CRÍTICA` | Bloques anidados (`if`, `for`, `while`, `try`) con más de 3 niveles. | *Guard Clauses* (retornos tempranos) |
-| **Long Parameter List** | `MEDIA` / `ALTA` | Funciones con más de 4-5 parámetros. | *Introduce Parameter Object* / DTO / Dataclass |
-| **Magic Numbers** | `MEDIA` | Números literales directos en lógica sin asignar a constantes. | Extraer a constante en `MAYÚSCULAS` o `Enum` |
-| **Dead / Commented-out Code** | `MEDIA` / `ALTA` | Bloques de código muerto comentado (>= 3 líneas). | Eliminación de código obsoleto (preservado por Git) |
-| **Complex Conditions** | `ALTA` | Expresiones booleanas con $\ge 3$ operadores lógicos encadenados. | *Explaining Variables* / Funciones predicado |
+| **Long Method / Function** | `ALTA` / `CRÍTICA` | Funciones con más de $N$ líneas efectivas (defecto: 35, excluyendo docstring). | *Extract Method* / Principio SLAP |
+| **God Class** | `ALTA` / `CRÍTICA` | Clases con > 200 líneas o > 12 métodos. | *Single Responsibility Principle (SRP)* / *Extract Class* |
+| **Large File** | `MEDIA` / `CRÍTICA` | Archivos que superan el umbral de líneas (defecto: 300). | Modularización en submódulos cohesivos |
+| **Deep Nesting** | `ALTA` / `CRÍTICA` | Bloques de control (`if`, `for`, `while`, `try`) con profundidad > 3. | *Guard Clauses* (retornos tempranos) |
+| **High Cyclomatic Complexity** | `ALTA` / `CRÍTICA` | Complejidad ciclomática de McCabe > 10 puntos de decisión. | Polimorfismo, tablas de despacho o extracción |
+| **Long Parameter List** | `MEDIA` / `ALTA` | Funciones o métodos con más de 4 parámetros (excluye `self`/`cls`). | *Introduce Parameter Object* / Dataclass / DTO |
+| **Complex Condition** | `ALTA` | Expresiones booleanas con $\ge 3$ operadores lógicos encadenados. | *Explaining Variables* o funciones predicado |
+| **Mutable Default Argument** | `ALTA` | Uso de `[]`, `{}` o `set()` como valor por defecto en firmas Python. | Usar `None` e inicializar dentro de la función |
+| **Dead / Commented-out Code** | `MEDIA` / `ALTA` | Bloques de $\ge 3$ líneas consecutivas de código comentado. | Eliminar código obsoleto (resguardado por Git) |
+| **Magic Number** | `MEDIA` | Números literales en lógica sin asignar a constantes descriptivas. | Extraer a constante en `MAYÚSCULAS` o `Enum` |
 
 ---
 
-## 🚀 Instalación y Requisitos
+## 🚀 Instalación
 
 Requiere **Python 3.10 o superior**.
 
 ```bash
-# Clonar el repositorio
 git clone https://github.com/SantiiDG/code-smell-analyzer.git
 cd code-smell-analyzer
-
-# (Opcional, pero recomendado) Instalar Rich para formateo visual avanzado
-pip install rich
+pip install -r requirements.txt
 ```
 
 ---
 
 ## 💻 Guía de Uso
 
-### 1. Escanear el directorio actual
+### 1. Analizar el directorio actual
 ```bash
 python smell_analyzer.py
 ```
 
-### 2. Escanear otro proyecto en cualquier ruta
+### 2. Analizar otro proyecto externo en cualquier carpeta
 ```bash
 python smell_analyzer.py --path "C:\ruta\a\tu\proyecto"
 ```
 
-### 3. Generar informe en formato Markdown
+### 3. Exportar auditoría a Markdown o JSON
 ```bash
+# Exportar informe visual en Markdown
 python smell_analyzer.py --path . --export smells_report.md
+
+# Exportar datos estructurados en JSON (ideal para CI/CD)
+python smell_analyzer.py --path . --export smells_report.json
 ```
 
-### 4. Filtrar por lenguaje específico
+### 4. Filtrar por lenguaje, severidad o exclusiones
 ```bash
-# Solo Python
-python smell_analyzer.py --lang py
+# Analizar únicamente Python y mostrar solo severidad ALTA y CRÍTICA
+python smell_analyzer.py --lang py --severity ALTA
 
-# Solo JavaScript / TypeScript
-python smell_analyzer.py --lang js
+# Excluir carpetas o archivos específicos adicionales
+python smell_analyzer.py --exclude migrations legacy_scripts
 ```
 
-### 5. Filtrar por nivel de severidad
-Muestra únicamente problemas de alta prioridad (`ALTA` y `CRÍTICA`):
+### 5. Personalizar umbrales de arquitectura
 ```bash
-python smell_analyzer.py --severity ALTA
-```
-
-### 6. Ajustar umbrales personalizados
-Adapta las métricas a las directrices de tu equipo:
-```bash
-python smell_analyzer.py --max-line-func 25 --max-params 3 --max-nesting 2
+python smell_analyzer.py --max-line-func 25 --max-params 3 --max-nesting 2 --max-complexity 8
 ```
 
 ---
 
-## ⚙️ Parámetros CLI
+## 🧪 Ejecutar Pruebas Unitarias
 
-```text
-Opciones:
-  -h, --help            Muestra la ayuda y sale.
-  --path PATH           Ruta de la carpeta o archivo a analizar (defecto: .).
-  --lang LANG           Lenguaje a inspeccionar: py, js, ts, java, c, cs, go o all (defecto: all).
-  --max-line-func N     Límite de líneas por función (defecto: 35).
-  --max-line-file N     Límite de líneas por archivo (defecto: 300).
-  --max-params N        Límite de parámetros por función (defecto: 4).
-  --max-nesting N       Profundidad máxima de anidación (defecto: 3).
-  --export FILE.md      Exportar auditoría a formato Markdown.
-  --severity {MEDIA,ALTA,CRITICA}
-                        Filtrar por severidad mínima.
-  --no-color            Desactivar colores ANSI (modo texto plano).
+El proyecto incluye una suite de tests automatizados con `unittest` (incluyendo un test de auto-auditoría que garantiza `0 smells` en el propio repositorio):
+
+```bash
+python -m unittest discover -s tests -v
 ```
-
----
-
-## 📊 Sistema de Puntuación (Health Score)
-
-El analizador evalúa la densidad de penalizaciones por cada 100 líneas de código:
-- **`A+` / `A` (90 - 100 pts):** Excelente salud arquitectónica. Deuda técnica insignificante.
-- **`B` (80 - 89 pts):** Aceptable. Requiere refactorizaciones preventivas puntuales.
-- **`C` (70 - 79 pts):** Regular. Acumulación moderada de acoplamiento y smells.
-- **`D` (60 - 69 pts):** Deficiente. Alto riesgo de regresión ante cambios.
-- **`F` (< 60 pts):** Crítico. Urgente necesidad de refactorización y rediseño.
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto se distribuye bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+Distribuido bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más información.
