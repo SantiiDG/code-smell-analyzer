@@ -4,7 +4,20 @@ Renderizador visual de resultados en consola (Dashboard 'rich' + Fallback ANSI).
 
 from __future__ import annotations
 
+import sys
 from typing import Optional
+
+# Garantizar codificación UTF-8 para consolas Windows
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 from analyzer.constants import (
     COL_WIDTH_LINE,
@@ -124,8 +137,8 @@ def _build_file_smells_table(file_res: FileAnalysisResult) -> Table:
         show_lines=True,
         expand=True,
     )
-    table.add_column("Línea", justify="right", style="bold cyan", width=COL_WIDTH_LINE)
-    table.add_column("Severidad", justify="center", width=COL_WIDTH_SEVERITY)
+    table.add_column("Línea", justify="right", style="bold cyan", width=COL_WIDTH_LINE, no_wrap=True)
+    table.add_column("Severidad", justify="center", width=COL_WIDTH_SEVERITY, no_wrap=True)
     table.add_column("Code Smell", style="bold yellow", width=COL_WIDTH_SMELL)
     table.add_column("Diagnóstico Técnico y Refactorización Accionable", style="white")
 
@@ -143,7 +156,7 @@ def _build_file_smells_table(file_res: FileAnalysisResult) -> Table:
 
 
 def _build_distribution_table(report: ProjectReport) -> Optional[Table]:
-    """Construye la tabla de distribución de smells con barras proporcionales."""
+    """Construye la tabla de distribución de smells con barras proporcionales alineadas."""
     counts = report.count_by_type_and_severity()
     if not counts:
         return None
@@ -156,11 +169,11 @@ def _build_distribution_table(report: ProjectReport) -> Optional[Table]:
         expand=True,
     )
     table.add_column("Categoría de Code Smell", style="bold white")
-    table.add_column("🔴 Crítica", justify="center", style="bold red")
-    table.add_column("🟡 Alta", justify="center", style="bold yellow")
-    table.add_column("🔵 Media", justify="center", style="cyan")
-    table.add_column("Total", justify="right", style="bold white")
-    table.add_column("Proporción", justify="left", style="bright_cyan")
+    table.add_column("Crítica", justify="center", style="bold red")
+    table.add_column("Alta", justify="center", style="bold yellow")
+    table.add_column("Media", justify="center", style="cyan")
+    table.add_column("Total", justify="right", style="bold white", no_wrap=True)
+    table.add_column("Proporción", justify="left", style="bright_cyan", no_wrap=True)
 
     for smell_type, (c_crit, c_high, c_med, tot) in counts.items():
         ratio_bar = build_ratio_bar(tot, total_all)
@@ -177,10 +190,10 @@ def _build_priority_table(report: ProjectReport) -> Optional[Table]:
         title="🎯 Podio de Prioridad: Top Archivos a Refactorizar",
         box=box.ROUNDED, border_style="yellow", header_style="bold yellow", expand=True,
     )
-    table.add_column("Prioridad", justify="center", style="bold bright_yellow", width=COL_WIDTH_SEVERITY)
+    table.add_column("Prioridad", justify="center", style="bold bright_yellow", width=COL_WIDTH_SEVERITY, no_wrap=True)
     table.add_column("Ruta del Archivo", style="bold white")
-    table.add_column("Hallazgos", justify="center", style="yellow")
-    table.add_column("Impacto", justify="center", style="bold red")
+    table.add_column("Hallazgos", justify="center", style="yellow", no_wrap=True)
+    table.add_column("Impacto", justify="center", style="bold red", no_wrap=True)
     table.add_column("Hoja de Ruta Sugerida", style="italic bright_green")
 
     for rank, f_res in enumerate(top_files, start=1):
